@@ -75,39 +75,97 @@ class CycleGANModel(BaseModel):
         fake_A_queries = [self.fake_A_pool.query(fa) for fa in self.fake_A_list]
         self.loss_D_B = self.backward_D_basic(self.netD_B, self.real_A, fake_A_queries)
 
-    def backward_G(self, real_A, real_B):
-        pass
+    def backward_G(self):
+        """
+        Calculate the loss function for each generator pair
+        Calculate the loss for generators G_A and G_B
+        """
+
+        lambda_idt = self.opt.lambda_identity
+        lambda_A = self.opt.lambda_A
+        lambda_B = self.opt.lambda_B
+        
+        #losses without the mutations
+        losses = np.empty(len(self.generators)*3)
+        for i in range(len(self.generators)):
+            gen_pair = self.generators[i]
+            
+            # Identity loss
+            if lambda_idt > 0:
+                # G_A should be identity if real_B is fed: ||G_A(B) - B||
+                self.idt_A = gen_pair.netG_A(self.real_B)
+                self.loss_idt_A = self.criterionIdt(self.idt_A, self.real_B) * lambda_B * lambda_idt
+                # G_B should be identity if real_A is fed: ||G_B(A) - A||
+                self.idt_B = gen_pair.netG_B(self.real_A)
+                self.loss_idt_B = self.criterionIdt(self.idt_B, self.real_A) * lambda_A * lambda_idt
+            else:
+                self.loss_idt_A = 0
+                self.loss_idt_B = 0
+            
+            # GAN loss D_A(G_A(A))
+            self.loss_G_A = self.criterionGAN(self.netD_A(self.fake_B_list[i]), True)
+            # GAN loss D_B(G_B(B))
+            self.loss_G_B = self.criterionGAN(self.netD_B(self.fake_A_list[i]), True)
+            # Forward cycle loss || G_B(G_A(A)) - A||
+            self.loss_cycle_A = self.criterionCycle(self.rec_A_list[i], self.real_A) * lambda_A
+            # Backward cycle loss || G_A(G_B(B)) - B||
+            self.loss_cycle_B = self.criterionCycle(self.rec_B_list[i], self.real_B) * lambda_B
+
+            #mut_atob = minimax_mutation_cost(self.netD_A(self.fake_B_list[i]))
+            #mut_btoa = minimax_mutation_cost(self.netD_A(self.fake_B_list[i]))
+            
+            # combined loss and calculate gradients
+            self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B
+
+            losses[i*3] = self.loss_G +\
+                    minimax_mutation_cost(self.netD_A(self.fake_B_list[i])) + \
+                    minimax_mutation_cost(self.netD_B(self.fake_A_list[i]))
+            losses[i*3+1] = self.loss_G+\
+                    heuristic_mutation_cost(self.netD_A(self.fake_B_list[i])) + \
+                    heuristic_mutation_cost(self.netD_B(self.fake_A_list[i]))
+            losses[i*3+2] = self.loss_G+\
+                    least_square_mutation_cost(self.netD_A(self.fake_B_list[i])) + \
+                    least_square_mutation_cost(self.netD_B(self.fake_A_list[i]))
+
+            #backprop for each generator pair
+            losses[i*3].backward()
+            losses[i*3+1].backward()
+            losses[i*3+2].backward()
 
 
-# TODO: check if these mutation costs are correct
-# Assuming p_z is uniform distribution
-def minimax_mutation_cost(fake_disc_pred):
-    """
-    Assuming p_z is uniform distribution
-    :param fake_disc_pred: tensor of shape (N). Results of D(G(x))
-    :return: 1/2 * E[log(1- fake_disc_pred)]
-    """
-    log_dist = torch.log(torch.ones(fake_disc_pred.shape[0]) - fake_disc_pred)
-    return -0.5 * log_dist.mean()
+    def fitness_score():
+        ## TODO: need to fillout with the fitness function 
 
-def heuristic_mutation_cost(fake_disc_pred):
-    """
-    Assuming p_z is uniform distribution
-    :param fake_disc_pred: tensor of shape (N). Results of D(G(x))
-    :return: -1/2 * E[log(fake_disc_pred)]
-    """
-    log_dist = torch.log(fake_disc_pred)
-    return -0.5 * log_dist.mean()
 
-def least_square_mutation_cost(fake_disc_pred):
-    """
-    Assuming p_z is uniform distribution
-    :param fake_disc_pred: tensor of shape (N). Results of D(G(x))
-    :return: E[(fake_disc_pred - 1)^2]
-    """
-
-    sq_dist = (fake_disc_pred - torch.ones(fake_disc_pred.shape[0]))**2
-    return sq_dist.mean()
+    # TODO: check if these mutation costs are correct
+    # Assuming p_z is uniform distribution
+    def minimax_mutation_cost(fake_disc_pred):
+        """
+        Assuming p_z is uniform distribution
+        :param fake_disc_pred: tensor of shape (N). Results of D(G(x))
+        :return: 1/2 * E[log(1- fake_disc_pred)]
+        """
+        log_dist = torch.log(torch.ones(fake_disc_pred.shape[0]) - fake_disc_pred)
+        return -0.5 * log_dist.mean()
+    
+    def heuristic_mutation_cost(fake_disc_pred):
+        """
+        Assuming p_z is uniform distribution
+        :param fake_disc_pred: tensor of shape (N). Results of D(G(x))
+        :return: -1/2 * E[log(fake_disc_pred)]
+        """
+        log_dist = torch.log(fake_disc_pred)
+        return -0.5 * log_dist.mean()
+    
+    def least_square_mutation_cost(fake_disc_pred):
+        """
+        Assuming p_z is uniform distribution
+        :param fake_disc_pred: tensor of shape (N). Results of D(G(x))
+        :return: E[(fake_disc_pred - 1)^2]
+        """
+    
+        sq_dist = (fake_disc_pred - torch.ones(fake_disc_pred.shape[0]))**2
+        return sq_dist.mean()
 
 class GeneratorPair:
 
