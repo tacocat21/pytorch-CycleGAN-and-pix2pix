@@ -8,6 +8,7 @@ from models.cycle_gan_model import CycleGANModel
 import os
 import numpy as np
 import copy
+import math
 
 
 class CycleGANModel(BaseModel):
@@ -25,6 +26,10 @@ class CycleGANModel(BaseModel):
         self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_A.parameters(), self.netD_B.parameters()),
                                             lr=opt.lr, betas=(opt.beta1, 0.999))
         self.opt = opt
+        self.criterionGAN = networks.GANLoss(opt.gan_mode).to(self.device)  # define GAN loss.
+        self.criterionCycle = torch.nn.L1Loss()
+        self.criterionIdt = torch.nn.L1Loss()
+        self.gamma = opt.gamma # used for fitness score
 
     def add_mutation_func(self, mutation_func):
         self.mutations.append(mutation_func)
@@ -155,20 +160,30 @@ class CycleGANModel(BaseModel):
         optimizer.load_state_dict(new_state)
         return optimizer
 
-def fitness_score(grad_dis,fake_disc_pred):
-    ## TODO: need to fillout with the fitness function
-    """
-    Evalute the fitness
-    https://github.com/WANG-Chaoyue/EvolutionaryGAN/blob/master/bedroom/train_bedroom_64.py
+    def fitness_score(self, generator, discriminator, img_real, pred_real):
+        """
+        Evalute the fitness
+        https://github.com/WANG-Chaoyue/EvolutionaryGAN/blob/master/bedroom/train_bedroom_64.py
 
-    fd should be the sum of the square of gradients
-    fake_disc_pred = prediction of the discriminator on fake data
-    """
+        fd should be the sum of the square of gradients
+        fake_disc_pred = prediction of the discriminator on fake data
+        """
+        discriminator.zero_grad()
+        img_fake = generator(img_real)
+        pred_fake = discriminator(img_fake)
+        fq = pred_fake.mean() # quality fitness
 
-    fq = fake_disc_pred.mean()
-    fd =  torch.log( grad_dis,
+        loss_D_real = self.criterionGAN(pred_real, True)
+        loss_D_fake = self.criterionGAN(pred_fake, False)
 
-    return fq  + fd2
+        loss_D = (loss_D_real + loss_D_fake) * 0.5
+        loss_D.backward()
+        # get gradient values
+        grad_val = 0
+        for p in discriminator.parameters():
+            grad_val += torch.sum(p.grad**2)
+        fd = math.log(grad_val) # diversity fitness
+        return fq  + fd
 
 
 
@@ -232,7 +247,7 @@ class GeneratorPair:
         self.netG_B = torch.load(os.path.join(self.save_dir, 'netG_B.model'))
 
     def get_parameters(self):
-        # TODO: define this function
+        # TODO: get parameters for both generators
         pass
 
 if __name__ == '__main__':
