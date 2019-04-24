@@ -38,6 +38,8 @@ class CycleGANModel(BaseModel):
         self.criterionIdt = torch.nn.L1Loss()
         self.num_parents = 1
         self.gamma = opt.gamma # used for fitness score
+        self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
+        self.fake_B_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
 
     def add_mutation_func(self, mutation_func):
         self.mutations.append(mutation_func)
