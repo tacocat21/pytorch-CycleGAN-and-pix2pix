@@ -36,6 +36,7 @@ class CycleGANModel(BaseModel):
         self.criterionGAN = networks.GANLoss(opt.gan_mode).to(self.device)  # define GAN loss.
         self.criterionCycle = torch.nn.L1Loss()
         self.criterionIdt = torch.nn.L1Loss()
+        self.num_parents = 1
         self.gamma = opt.gamma # used for fitness score
 
     def add_mutation_func(self, mutation_func):
@@ -113,6 +114,7 @@ class CycleGANModel(BaseModel):
         lambda_idt = self.opt.lambda_identity
         lambda_A = self.opt.lambda_A
         lambda_B = self.opt.lambda_B
+        generator_list = []
         fitness_scores = []
         optimizer_list = [] # keep optimizer of best child
         #losses without the mutations
@@ -131,6 +133,7 @@ class CycleGANModel(BaseModel):
 
             for mut_func in self.mutations:
                 child_generator = copy.deepcopy(gen_pair)
+                generator_list.append(child_generator)
                 # Identity loss
                 if lambda_idt > 0:
                     # G_A should be identity if real_B is fed: ||G_A(B) - B||
@@ -159,9 +162,12 @@ class CycleGANModel(BaseModel):
                 fitness = self.fitness_score(child_generator)
                 fitness_scores.append(fitness)
 
+        # order of the fitness score
+        order = sorted(range(len(fitness_scores)), key=lambda k: fitness_scores[k], reverse=True)
 
+        self.generators = [generator_list[i] for i in order[:self.num_parents]]
+        self.optimizer_G = optimizer_list[order[0]]
 
-        #TODO: fitness score
 
     def fitness_score(self, generator):
         """
