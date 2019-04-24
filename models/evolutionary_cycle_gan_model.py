@@ -14,6 +14,13 @@ import math
 class CycleGANModel(BaseModel):
 
     def __init__(self, opt):
+        """
+        Generators: G_A: A -> B; G_B: B -> A.
+        Discriminators: D_A: G_A(A) vs. B; D_B: G_B(B) vs. A.
+        D_A pass image B
+        D_B pass image A
+        :param opt:
+        """
         BaseModel.__init__(self, opt)
         self.generators = [] # TODO: define generator
         self.netD_A  = None # TODO: define discriminator
@@ -100,6 +107,8 @@ class CycleGANModel(BaseModel):
         Calculate the loss function for each generator pair
         Calculate the loss for generators G_A and G_B
         """
+        self.pred_real_A = self.netD_A(self.real_B)
+        self.pred_real_B = self.netD_B(self.real_A)
 
         lambda_idt = self.opt.lambda_identity
         lambda_A = self.opt.lambda_A
@@ -147,11 +156,46 @@ class CycleGANModel(BaseModel):
                 optimizer = self.get_copy_optimizer(child_generator)
                 optimizer.step()
                 optimizer_list.append(optimizer)
+                fitness = self.fitness_score(child_generator)
+                fitness_scores.append(fitness)
+
 
 
         #TODO: fitness score
 
+    def fitness_score(self, generator):
+        """
+        Evalute the fitness
+        """
+        self.netD_A.zero_grad()
+        self.netD_B.zero_grad()
+        img_fake_A = generator.netG_B(self.real_B)
+        img_fake_B = generator.netG_A(self.real_A)
+        pred_fake_A = self.netD_A(img_fake_B)
+        pred_fake_B = self.netD_B(img_fake_A)
+        fq = pred_fake_A.mean() + pred_fake_B.mean() # quality fitness
+        #        self.pred_real_A = self.netD_A(self.real_B)
+        # self.pred_real_B = self.netD_B(self.real_A)
+        loss_D_A_real = self.criterionGAN(self.pred_real_A, True)
+        loss_D_A_fake = self.criterionGAN(pred_fake_A, False)
 
+        loss_D_A = (loss_D_A_real + loss_D_A_fake) * 0.5
+        loss_D_A.backward()
+
+        loss_D_B_real = self.criterionGAN(self.pred_real_B, True)
+        loss_D_B_fake = self.criterionGAN(pred_fake_B, False)
+
+        loss_D_B = (loss_D_B_real + loss_D_B_fake) * 0.5
+        loss_D_B.backward()
+
+        # get gradient values
+        grad_val = 0
+        for p in self.netD_A.parameters():
+            grad_val += torch.sum(p.grad**2)
+        for p in self.netD_B.parameters():
+            grad_val += torch.sum(p.grad**2)
+        fd = math.log(grad_val) # diversity fitness
+        return fq  + self.gamma * fd
 
     def get_copy_optimizer(self, child_generator):
         optimizer = torch.optim.Adam(child_generator.parameters(), lr=self.opt.lr)
@@ -160,30 +204,7 @@ class CycleGANModel(BaseModel):
         optimizer.load_state_dict(new_state)
         return optimizer
 
-    def fitness_score(self, generator, discriminator, img_real, pred_real):
-        """
-        Evalute the fitness
-        https://github.com/WANG-Chaoyue/EvolutionaryGAN/blob/master/bedroom/train_bedroom_64.py
 
-        fd should be the sum of the square of gradients
-        fake_disc_pred = prediction of the discriminator on fake data
-        """
-        discriminator.zero_grad()
-        img_fake = generator(img_real)
-        pred_fake = discriminator(img_fake)
-        fq = pred_fake.mean() # quality fitness
-
-        loss_D_real = self.criterionGAN(pred_real, True)
-        loss_D_fake = self.criterionGAN(pred_fake, False)
-
-        loss_D = (loss_D_real + loss_D_fake) * 0.5
-        loss_D.backward()
-        # get gradient values
-        grad_val = 0
-        for p in discriminator.parameters():
-            grad_val += torch.sum(p.grad**2)
-        fd = math.log(grad_val) # diversity fitness
-        return fq  + fd
 
 
 
