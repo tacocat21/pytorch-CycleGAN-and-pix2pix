@@ -6,6 +6,8 @@ from .base_model import BaseModel
 from . import networks
 from models.cycle_gan_model import CycleGANModel
 import os
+import numpy as np
+
 
 class CycleGANModel(BaseModel):
 
