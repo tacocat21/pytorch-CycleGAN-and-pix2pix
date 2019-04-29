@@ -11,7 +11,7 @@ import copy
 import math
 
 
-class CycleGANModel(BaseModel):
+class EvolutionaryCycleGANModel(BaseModel):
 
     def __init__(self, opt):
         """
@@ -25,7 +25,7 @@ class CycleGANModel(BaseModel):
         self.generators = [] # TODO: define generator
         self.netD_A  = None # TODO: define discriminator
         self.netD_B = None
-        self.mutations = []
+        self.mutations = [minimax_mutation_cost, heuristic_mutation_cost, least_square_mutation_cost]
         # TODO:
         # parent optimizer for generator
         self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
@@ -227,6 +227,7 @@ def minimax_mutation_cost(fake_disc_pred):
     log_dist = torch.log(torch.ones(fake_disc_pred.shape[0]) - fake_disc_pred)
     return -0.5 * log_dist.mean()
 
+
 def heuristic_mutation_cost(fake_disc_pred):
     """
     Assuming p_z is uniform distribution
@@ -280,4 +281,4 @@ class GeneratorPair:
         pass
 
 if __name__ == '__main__':
-    pass
+
