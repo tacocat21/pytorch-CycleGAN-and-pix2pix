@@ -26,7 +26,7 @@ class EvolutionaryCycleGANModel(BaseModel):
         self.netD_A  = None # TODO: define discriminator
         self.netD_B = None
         self.mutations = [minimax_mutation_cost, heuristic_mutation_cost, least_square_mutation_cost]
-        # TODO:
+
         # parent optimizer for generator
         self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
                                             lr=opt.lr, betas=(opt.beta1, 0.999))
@@ -40,6 +40,8 @@ class EvolutionaryCycleGANModel(BaseModel):
         self.gamma = opt.gamma # used for fitness score
         self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
         self.fake_B_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
+
+    #TODO: define set_input
 
     def add_mutation_func(self, mutation_func):
         self.mutations.append(mutation_func)
@@ -276,9 +278,6 @@ class GeneratorPair:
         self.netG_A = torch.load(os.path.join(self.save_dir, 'netG_A.model'))
         self.netG_B = torch.load(os.path.join(self.save_dir, 'netG_B.model'))
 
-    def get_parameters(self):
-        # TODO: get parameters for both generators
-        pass
 
 if __name__ == '__main__':
-
+    pass
