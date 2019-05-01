@@ -173,8 +173,6 @@ class EvolutionaryCycleGANModel(BaseModel):
         Calculate the loss function for each generator pair
         Calculate the loss for generators G_A and G_B
         """
-        self.pred_real_A = self.netD_A(self.real_B)
-        self.pred_real_B = self.netD_B(self.real_A)
 
         lambda_idt = self.opt.lambda_identity
         lambda_A = self.opt.lambda_A
@@ -186,16 +184,17 @@ class EvolutionaryCycleGANModel(BaseModel):
         #loop over parent generators
         for i in range(len(self.generators)):
             gen_pair = self.generators[i] # parent
-            # GAN loss D_A(G_A(A))
-            loss_G_A = self.criterionGAN(self.netD_A(self.fake_B_list[i]), True)
-            # GAN loss D_B(G_B(B))
-            loss_G_B = self.criterionGAN(self.netD_B(self.fake_A_list[i]), True)
-            # Forward cycle loss || G_B(G_A(A)) - A||
-            loss_cycle_A = self.criterionCycle(self.rec_A_list[i], self.real_A) * lambda_A
-            # Backward cycle loss || G_A(G_B(B)) - B||
-            loss_cycle_B = self.criterionCycle(self.rec_B_list[i], self.real_B) * lambda_B
 
             for mut_func in self.mutations:
+                # GAN loss D_A(G_A(A))
+                loss_G_A = self.criterionGAN(self.netD_A(self.fake_B_list[i]), True)
+                # GAN loss D_B(G_B(B))
+                loss_G_B = self.criterionGAN(self.netD_B(self.fake_A_list[i]), True)
+                # Forward cycle loss || G_B(G_A(A)) - A||
+                loss_cycle_A = self.criterionCycle(self.rec_A_list[i], self.real_A) * lambda_A
+                # Backward cycle loss || G_A(G_B(B)) - B||
+                loss_cycle_B = self.criterionCycle(self.rec_B_list[i], self.real_B) * lambda_B
+
                 child_generator = copy.deepcopy(gen_pair)
                 generator_list.append(child_generator)
                 # Identity loss
@@ -220,7 +219,7 @@ class EvolutionaryCycleGANModel(BaseModel):
                 #     'param_groups': child_generator.get_parameters()
                 # })
                 mut_cost.backward()
-                #TODO: check genrator steps
+                #TODO: check generator steps
                 optimizer = self.get_copy_optimizer(child_generator)
                 optimizer.step()
                 optimizer_list.append(optimizer)
