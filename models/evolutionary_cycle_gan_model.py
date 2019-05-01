@@ -126,8 +126,8 @@ class EvolutionaryCycleGANModel(BaseModel):
 
     def optimize_D(self):
         """Forward and backward pass for both discriminators"""
-        self.forward()  # compute fake images and reconstruction images.
         self.set_requires_grad([self.netD_A, self.netD_B], True)
+        self.forward()  # compute fake images and reconstruction images.
         self.optimizer_D.zero_grad()   # set D_A and D_B's gradients to zero
         self.backward_D_A()      # calculate gradients for D_A
         self.backward_D_B()      # calculate graidents for D_B
