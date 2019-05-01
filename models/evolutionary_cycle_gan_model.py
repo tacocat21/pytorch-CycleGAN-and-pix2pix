@@ -220,6 +220,7 @@ class EvolutionaryCycleGANModel(BaseModel):
                 #     'param_groups': child_generator.get_parameters()
                 # })
                 mut_cost.backward()
+                #TODO: check genrator steps
                 optimizer = self.get_copy_optimizer(child_generator)
                 optimizer.step()
                 optimizer_list.append(optimizer)
@@ -239,20 +240,24 @@ class EvolutionaryCycleGANModel(BaseModel):
         """
         self.netD_A.zero_grad()
         self.netD_B.zero_grad()
+
+        pred_real_A = self.netD_A(self.real_B)
+        pred_real_B = self.netD_B(self.real_A)
+
         img_fake_A = generator.netG_B(self.real_B)
         img_fake_B = generator.netG_A(self.real_A)
         pred_fake_A = self.netD_A(img_fake_B)
         pred_fake_B = self.netD_B(img_fake_A)
-        fq = pred_fake_A.mean() + pred_fake_B.mean() # quality fitness
+        fq = pred_fake_A.mean() + pred_fake_B.mean() # quality fitness #TODO: should one of this be negative?
         #        self.pred_real_A = self.netD_A(self.real_B)
         # self.pred_real_B = self.netD_B(self.real_A)
-        loss_D_A_real = self.criterionGAN(self.pred_real_A, True)
+        loss_D_A_real = self.criterionGAN(pred_real_A, True)
         loss_D_A_fake = self.criterionGAN(pred_fake_A, False)
 
         loss_D_A = (loss_D_A_real + loss_D_A_fake) * 0.5
         loss_D_A.backward()
 
-        loss_D_B_real = self.criterionGAN(self.pred_real_B, True)
+        loss_D_B_real = self.criterionGAN(pred_real_B, True)
         loss_D_B_fake = self.criterionGAN(pred_fake_B, False)
 
         loss_D_B = (loss_D_B_real + loss_D_B_fake) * 0.5
@@ -260,11 +265,11 @@ class EvolutionaryCycleGANModel(BaseModel):
 
         # get gradient values
         grad_val = 0
-        for p in self.netD_A.parameters():
-            grad_val += torch.sum(p.grad**2)
-        for p in self.netD_B.parameters():
-            grad_val += torch.sum(p.grad**2)
-        fd = math.log(grad_val) # diversity fitness
+        for param in self.netD_A.parameters():
+            grad_val += torch.sum(param.grad**2)
+        for param in self.netD_B.parameters():
+            grad_val += torch.sum(param.grad**2)
+        fd = - math.log(grad_val) # diversity fitness
         return fq  + self.gamma * fd
 
     def get_copy_optimizer(self, child_generator):
