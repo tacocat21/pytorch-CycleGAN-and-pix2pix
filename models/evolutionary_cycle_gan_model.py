@@ -186,6 +186,7 @@ class EvolutionaryCycleGANModel(BaseModel):
             gen_pair = self.generators[i] # parent
 
             for mut_func in self.mutations:
+                gen_pair.zero_grad()
                 # GAN loss D_A(G_A(A))
                 loss_G_A = self.criterionGAN(self.netD_A(self.fake_B_list[i]), True)
                 # GAN loss D_B(G_B(B))
@@ -340,6 +341,10 @@ class GeneratorPair:
 
     def parameters(self):
         return itertools.chain(self.netG_A.parameters(), self.netG_B.parameters())
+
+    def zero_grad(self):
+        self.netG_A.zero_grad()
+        self.netG_B.zero_grad()
 
     def save_to_disk(self):
         torch.save(self.netG_A, os.path.join(self.save_dir, 'netG_A.model'))
