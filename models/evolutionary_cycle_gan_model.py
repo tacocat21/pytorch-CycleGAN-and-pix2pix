@@ -219,7 +219,7 @@ class EvolutionaryCycleGANModel(BaseModel):
                 # self.optimizer_G.__setstate__({
                 #     'param_groups': child_generator.get_parameters()
                 # })
-                mut_cost.backward()
+                mut_cost.backward(retain_graph=True)
                 #TODO: check generator steps
                 optimizer = self.get_copy_optimizer(child_generator)
                 optimizer.step()
