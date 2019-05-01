@@ -23,8 +23,11 @@ class EvolutionaryCycleGANModel(BaseModel):
         """
         BaseModel.__init__(self, opt)
         self.generators = [] # TODO: define generator
-        self.netD_A  = None # TODO: define discriminator
-        self.netD_B = None
+        self.netD_A  = networks.define_D(opt.output_nc, opt.ndf, opt.netD,
+                                         opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
+        self.netD_B = networks.define_D(opt.input_nc, opt.ndf, opt.netD,
+                                        opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
+        
         self.mutations = [minimax_mutation_cost, heuristic_mutation_cost, least_square_mutation_cost]
 
         # parent optimizer for generator
@@ -40,8 +43,19 @@ class EvolutionaryCycleGANModel(BaseModel):
         self.gamma = opt.gamma # used for fitness score
         self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
         self.fake_B_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
+        #TODO: define set_input
 
-    #TODO: define set_input
+    def set_input(self, input):
+        """Unpack input data from the dataloader and perform necessary pre-processing steps.
+        Parameters:
+            input (dict): include the data itself and its metadata information.
+        The option 'direction' can be used to swap domain A and domain B.
+        """
+        AtoB = self.opt.direction == 'AtoB'
+        self.real_A = input['A' if AtoB else 'B'].to(self.device)
+        self.real_B = input['B' if AtoB else 'A'].to(self.device)
+        self.image_paths = input['A_paths' if AtoB else 'B_paths']
+
 
     def add_mutation_func(self, mutation_func):
         self.mutations.append(mutation_func)
@@ -251,9 +265,13 @@ def least_square_mutation_cost(fake_disc_pred):
 
 class GeneratorPair:
 
-    def __init__(self, base_dir='./cache'):
-        self.netG_A = None # TODO fill these
-        self.netG_B = None
+    def __init__(self, opt, base_dir='./cache'):
+        #Generator def lifted from CycleGANModel
+        self.netG_A = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
+                  not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
+        self.netG_B = networks.define_G(opt.output_nc, opt.input_nc, opt.ngf, opt.netG, opt.norm,
+                          not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
+
         self.uuid = str(uuid.uuid4())
         self.save_dir = os.path.join(base_dir, self.uuid)
         while os.path.exists(self.save_dir):
