@@ -160,9 +160,11 @@ class EvolutionaryCycleGANModel(BaseModel):
         self.optimizer_D.step()  # update D_A and D_B's weights
 
     def optimize_G(self):
-        self.set_requires_grad([self.netD_A, self.netD_B], False)  # Ds require no gradients when optimizing Gs
+        # self.set_requires_grad([self.netD_A, self.netD_B], False)  # Ds require no gradients when optimizing Gs
         self.optimizer_G.zero_grad()  # set G_A and G_B's gradients to zero
         self.backward_G()             # calculate gradients for G_A and G_B
+        self.netD_A.zero_grad()
+        self.netD_B.zero_grad()
         # self.optimizer_G.step()       # update G_A and G_B's weights
 
 
