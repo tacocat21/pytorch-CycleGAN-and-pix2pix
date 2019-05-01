@@ -288,9 +288,9 @@ class GeneratorPair:
     def __init__(self, opt, base_dir='./cache'):
         #Generator def lifted from CycleGANModel
         self.netG_A = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
-                  not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
+                  not opt.no_dropout, opt.init_type, opt.init_gain, opt.gpu_ids)
         self.netG_B = networks.define_G(opt.output_nc, opt.input_nc, opt.ngf, opt.netG, opt.norm,
-                          not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
+                          not opt.no_dropout, opt.init_type, opt.init_gain, opt.gpu_ids)
 
         self.uuid = str(uuid.uuid4())
         self.save_dir = os.path.join(base_dir, self.uuid)
