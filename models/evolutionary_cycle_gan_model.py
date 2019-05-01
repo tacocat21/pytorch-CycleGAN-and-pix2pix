@@ -229,28 +229,26 @@ class EvolutionaryCycleGANModel(BaseModel):
         return optimizer
 
 
-
-
-
-# TODO: check if these mutation costs are correct
 # Assuming p_z is uniform distribution
-def minimax_mutation_cost(fake_disc_pred):
+def minimax_mutation_cost(fake_disc_pred, epsilon = 1e-8):
     """
     Assuming p_z is uniform distribution
     :param fake_disc_pred: tensor of shape (N). Results of D(G(x))
+    :param epsilon: for numerical stability. (we don't input log(0)
     :return: 1/2 * E[log(1- fake_disc_pred)]
     """
-    log_dist = torch.log(torch.ones(fake_disc_pred.shape[0]) - fake_disc_pred)
-    return -0.5 * log_dist.mean()
+    log_dist = torch.log((torch.ones(fake_disc_pred.shape[0]) * (1 + epsilon)) - fake_disc_pred)
+    return 0.5 * log_dist.mean()
 
 
-def heuristic_mutation_cost(fake_disc_pred):
+def heuristic_mutation_cost(fake_disc_pred, epsilon = 1e-8):
     """
     Assuming p_z is uniform distribution
     :param fake_disc_pred: tensor of shape (N). Results of D(G(x))
+    :param epsilon: for numerical stability. (we don't input log(0)
     :return: -1/2 * E[log(fake_disc_pred)]
     """
-    log_dist = torch.log(fake_disc_pred)
+    log_dist = torch.log(fake_disc_pred + (torch.ones(fake_disc_pred.shape[0]) * epsilon))
     return -0.5 * log_dist.mean()
 
 def least_square_mutation_cost(fake_disc_pred):
