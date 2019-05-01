@@ -33,7 +33,7 @@ class EvolutionaryCycleGANModel(BaseModel):
         self.mutations = [minimax_mutation_cost, heuristic_mutation_cost, least_square_mutation_cost]
 
         # parent optimizer for generator
-        self.optimizer_G = torch.optim.Adam(itertools.chain([g.parameters() for g in self.generators]),
+        self.optimizer_G = torch.optim.Adam(itertools.chain.from_iterable([g.parameters() for g in self.generators]),
                                             lr=opt.lr, betas=(opt.beta1, 0.999))
         self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_A.parameters(), self.netD_B.parameters()),
                                             lr=opt.lr, betas=(opt.beta1, 0.999))
