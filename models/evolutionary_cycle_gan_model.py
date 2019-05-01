@@ -23,7 +23,8 @@ class EvolutionaryCycleGANModel(BaseModel):
         :param opt:
         """
         BaseModel.__init__(self, opt)
-        self.generators = [] # TODO: define generator
+
+        self.generators = [GeneratorPair(opt)]
         self.netD_A  = networks.define_D(opt.output_nc, opt.ndf, opt.netD,
                                          opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
         self.netD_B = networks.define_D(opt.input_nc, opt.ndf, opt.netD,
@@ -32,7 +33,7 @@ class EvolutionaryCycleGANModel(BaseModel):
         self.mutations = [minimax_mutation_cost, heuristic_mutation_cost, least_square_mutation_cost]
 
         # parent optimizer for generator
-        self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
+        self.optimizer_G = torch.optim.Adam(itertools.chain([g.parameters() for g in self.generators]),
                                             lr=opt.lr, betas=(opt.beta1, 0.999))
         self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_A.parameters(), self.netD_B.parameters()),
                                             lr=opt.lr, betas=(opt.beta1, 0.999))
@@ -123,6 +124,22 @@ class EvolutionaryCycleGANModel(BaseModel):
         fake_A_queries = [self.fake_A_pool.query(fa) for fa in self.fake_A_list]
         self.loss_D_B = self.backward_D_basic(self.netD_B, self.real_A, fake_A_queries)
 
+    def optimize_D(self):
+        """Forward and backward pass for both discriminators"""
+        self.forward()  # compute fake images and reconstruction images.
+        self.set_requires_grad([self.netD_A, self.netD_B], True)
+        self.optimizer_D.zero_grad()   # set D_A and D_B's gradients to zero
+        self.backward_D_A()      # calculate gradients for D_A
+        self.backward_D_B()      # calculate graidents for D_B
+        self.optimizer_D.step()  # update D_A and D_B's weights
+
+    def optimize_G(self):
+        self.set_requires_grad([self.netD_A, self.netD_B], False)  # Ds require no gradients when optimizing Gs
+        self.optimizer_G.zero_grad()  # set G_A and G_B's gradients to zero
+        self.backward_G()             # calculate gradients for G_A and G_B
+        # self.optimizer_G.step()       # update G_A and G_B's weights
+
+
     def backward_G(self):
         """
         Calculate the loss function for each generator pair
@@ -137,8 +154,7 @@ class EvolutionaryCycleGANModel(BaseModel):
         generator_list = []
         fitness_scores = []
         optimizer_list = [] # keep optimizer of best child
-        #losses without the mutations
-        losses = np.empty(len(self.generators)*len(self.mutations))
+
         #loop over parent generators
         for i in range(len(self.generators)):
             gen_pair = self.generators[i] # parent
@@ -284,6 +300,9 @@ class GeneratorPair:
             os.makedirs(self.save_dir)
         except:
             pass
+
+    def parameters(self):
+        return itertools.chain(self.netG_A.parameters(), self.netG_B.parameters())
 
     def save_to_disk(self):
         torch.save(self.netG_A, os.path.join(self.save_dir, 'netG_A.model'))

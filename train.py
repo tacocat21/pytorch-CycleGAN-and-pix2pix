@@ -41,7 +41,7 @@ if __name__ == '__main__':
         epoch_start_time = time.time()  # timer for entire epoch
         iter_data_time = time.time()    # timer for data loading per iteration
         epoch_iter = 0                  # the number of training iterations in current epoch, reset to 0 every epoch
-
+        num_loop = 0
         for i, data in enumerate(dataset):  # inner loop within one epoch
             iter_start_time = time.time()  # timer for computation per iteration
             if total_iters % opt.print_freq == 0:
@@ -51,7 +51,18 @@ if __name__ == '__main__':
             epoch_iter += opt.batch_size
             #TODO: define this for evolutionary GAN
             model.set_input(data)         # unpack data from dataset and apply preprocessing
-            model.optimize_parameters()   # calculate loss functions, get gradients, update network weights
+            if opt.evolutionary:
+                if num_loop < opt.num_discriminator_loop:
+                    # backwards on the discriminator
+                    num_loop += 1
+                    model.optimize_D()
+
+                else:
+                    num_loop = 0
+                    # backwards on the generator
+                    model.optimize_G()
+            else:
+                model.optimize_parameters()   # calculate loss functions, get gradients, update network weights
 
             if total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
                 save_result = total_iters % opt.update_html_freq == 0
