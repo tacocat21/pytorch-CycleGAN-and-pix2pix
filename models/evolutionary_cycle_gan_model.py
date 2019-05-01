@@ -246,6 +246,8 @@ class EvolutionaryCycleGANModel(BaseModel):
         optimizer.load_state_dict(new_state)
         return optimizer
 
+    def optimize_parameters(self):
+        pass
 
 # Assuming p_z is uniform distribution
 def minimax_mutation_cost(fake_disc_pred, epsilon = 1e-8):
