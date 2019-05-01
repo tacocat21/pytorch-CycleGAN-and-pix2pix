@@ -40,5 +40,6 @@ class TrainOptions(BaseOptions):
         parser.add_argument('--evolutionary', action='store_true', help='Train the model using evolutionary algorithm')
         parser.add_argument('--num_discriminator_loop', type=int, default=2,
                             help='Number of time to loop the discriminator before looping the generator')
+        parser.add_argument('--gamma', type=float, default=0.002, help='Hyperparameter for fitness function')
         self.isTrain = True
         return parser
