@@ -168,6 +168,7 @@ class EvolutionaryCycleGANModel(BaseModel):
 
     def optimize_G(self):
         # self.set_requires_grad([self.netD_A, self.netD_B], False)  # Ds require no gradients when optimizing Gs
+        self.forward() #TODO: added forward here. Not sure if correct
         self.optimizer_G.zero_grad()  # set G_A and G_B's gradients to zero
         self.backward_G()             # calculate gradients for G_A and G_B
         self.netD_A.zero_grad()
@@ -298,6 +299,10 @@ class EvolutionaryCycleGANModel(BaseModel):
     def optimize_parameters(self):
         pass
 
+    def save_networks(self, epoch):
+        super(EvolutionaryCycleGANModel, self).save_networks(epoch)
+        self.generators[0].save_to_disk(self.save_dir, epoch)
+
 # Assuming p_z is uniform distribution
 def minimax_mutation_cost(fake_disc_pred, epsilon = 1e-8):
     """
@@ -344,17 +349,6 @@ class GeneratorPair:
         self.netG_B = networks.define_G(opt.output_nc, opt.input_nc, opt.ngf, opt.netG, opt.norm,
                           not opt.no_dropout, opt.init_type, opt.init_gain, opt.gpu_ids)
 
-        self.uuid = str(uuid.uuid4())
-        self.save_dir = os.path.join(base_dir, self.uuid)
-        while os.path.exists(self.save_dir):
-            self.uuid = str(uuid.uuid4())
-            self.save_dir = os.path.join(base_dir, self.uuid)
-            # make sure there isn't a duplicate
-        try:
-            os.makedirs(self.save_dir)
-        except:
-            pass
-
     def parameters(self):
         return itertools.chain(self.netG_A.parameters(), self.netG_B.parameters())
 
@@ -362,18 +356,31 @@ class GeneratorPair:
         self.netG_A.zero_grad()
         self.netG_B.zero_grad()
 
-    def save_to_disk(self):
-        torch.save(self.netG_A, os.path.join(self.save_dir, 'netG_A.model'))
-        torch.save(self.netG_B, os.path.join(self.save_dir, 'netG_B.model'))
-        # remove network from memory
-        del self.netG_A
-        del self.netG_B
-        self.netG_A = None
-        self.netG_B = None
+    def save_to_disk(self, save_dir, epoch):
+        netG_A_path = os.path.join(save_dir, '{}_netG_A.pth'.format(epoch))
+        netG_B_path = os.path.join(save_dir, '{}_netG_B.pth'.format(epoch))
 
-    def load_from_disk(self):
-        self.netG_A = torch.load(os.path.join(self.save_dir, 'netG_A.model'))
-        self.netG_B = torch.load(os.path.join(self.save_dir, 'netG_B.model'))
+        if torch.cuda.is_available():
+            torch.save(self.netG_A.module.cpu().state_dict(), netG_A_path)
+            self.netG_A.cuda()
+            torch.save(self.netG_B.module.cpu().state_dict(), netG_B_path)
+            self.netG_B.cuda()
+
+        else:
+            torch.save(self.netG_A.cpu().state_dict(), netG_A_path)
+            torch.save(self.netG_A.cpu().state_dict(), netG_B_path)
+
+        # torch.save(self.netG_A, os.path.join(save_dir, '{}_netG_A.pth'.format(epoch)))
+        # torch.save(self.netG_B, os.path.join(save_dir, '{}_netG_B.pth'.format(epoch)))
+        # remove network from memory
+        # del self.netG_A
+        # del self.netG_B
+        # self.netG_A = None
+        # self.netG_B = None
+
+    # def load_from_disk(self):
+    #     self.netG_A = torch.load(os.path.join(self.save_dir, 'netG_A.model'))
+    #     self.netG_B = torch.load(os.path.join(self.save_dir, 'netG_B.model'))
 
 
 if __name__ == '__main__':

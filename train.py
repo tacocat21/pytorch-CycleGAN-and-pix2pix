@@ -24,6 +24,7 @@ from data import create_dataset
 from models import create_model
 from util.visualizer import Visualizer
 import ipdb
+import os
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
@@ -44,6 +45,7 @@ if __name__ == '__main__':
         epoch_iter = 0                  # the number of training iterations in current epoch, reset to 0 every epoch
         num_loop = 0
         for i, data in enumerate(dataset):  # inner loop within one epoch
+            print(i)
             iter_start_time = time.time()  # timer for computation per iteration
             if total_iters % opt.print_freq == 0:
                 t_data = iter_start_time - iter_data_time
@@ -62,8 +64,9 @@ if __name__ == '__main__':
                     num_loop = 0
                     # backwards on the generator
                     model.optimize_G()
-                    if epoch_iter%5 == 0:
-                        model.generators[0].save_to_disk()
+                    # if epoch_iter%5 == 0:
+                    #     save_dir = os.path.join(opt.checkpoints_dir, opt.name)
+                    #     model.generators[0].save_to_disk(epoch)
             else:
                 model.optimize_parameters()   # calculate loss functions, get gradients, update network weights
 
