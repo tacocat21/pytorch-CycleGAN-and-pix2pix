@@ -62,6 +62,9 @@ if __name__ == '__main__':
                     num_loop = 0
                     # backwards on the generator
                     model.optimize_G()
+										#save best generator every 5 epochs:
+										if epoch_iter%5 == 0:
+											model.generators[0].save_to_disk()
             else:
                 model.optimize_parameters()   # calculate loss functions, get gradients, update network weights
 
