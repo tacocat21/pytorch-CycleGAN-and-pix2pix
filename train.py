@@ -69,6 +69,7 @@ if __name__ == '__main__':
                 save_result = total_iters % opt.update_html_freq == 0
                 model.compute_visuals()
                 try:
+                    #TODO: fix this visualizer bug
                     visualizer.display_current_results(model.get_current_visuals(), epoch, save_result)
                 except StopIteration:
                     pass
@@ -79,6 +80,8 @@ if __name__ == '__main__':
                 visualizer.print_current_losses(epoch, epoch_iter, losses, t_comp, t_data)
                 if opt.display_id > 0:
                     try:
+                        # TODO: fix this visualizer bug
+
                         visualizer.plot_current_losses(epoch, float(epoch_iter) / dataset_size, losses)
                     except ValueError:
                         pass

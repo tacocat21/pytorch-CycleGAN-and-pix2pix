@@ -250,7 +250,7 @@ class EvolutionaryCycleGANModel(BaseModel):
         """
         Evalute the fitness
         """
-        #TODO: test for accuracy!
+        #TODO: check this value is computed correctly!
         self.netD_A.zero_grad()
         self.netD_B.zero_grad()
 
