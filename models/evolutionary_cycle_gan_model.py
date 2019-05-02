@@ -10,6 +10,7 @@ import numpy as np
 import copy
 import math
 import torch.nn as nn
+import ipdb
 
 
 class EvolutionaryCycleGANModel(BaseModel):
@@ -72,6 +73,12 @@ class EvolutionaryCycleGANModel(BaseModel):
         self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
         self.fake_B_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
         self.sigmoid = nn.Sigmoid()
+        self.model_names = ['D_A', 'D_B']
+        self.disc_optimizer = [self.optimizer_D]
+        self.set_optimizers()
+
+    def set_optimizers(self):
+        self.optimizers = self.disc_optimizer + [self.optimizer_G]
 
 
     def set_input(self, input):
@@ -221,8 +228,12 @@ class EvolutionaryCycleGANModel(BaseModel):
                 # })
                 mut_cost.backward(retain_graph=True)
                 #TODO: check generator steps
-                optimizer = self.get_copy_optimizer(child_generator)
-                optimizer.step()
+                try:
+                    optimizer = self.get_copy_optimizer(child_generator)
+                    optimizer.step()
+                except RuntimeError as e:
+                    ipdb.set_trace()
+                    print(e)
                 optimizer_list.append(optimizer)
                 fitness = self.fitness_score(child_generator)
                 fitness_scores.append(fitness)
@@ -232,12 +243,14 @@ class EvolutionaryCycleGANModel(BaseModel):
 
         self.generators = [generator_list[i] for i in order[:self.num_parents]]
         self.optimizer_G = optimizer_list[order[0]]
+        self.set_optimizers()
 
 
     def fitness_score(self, generator):
         """
         Evalute the fitness
         """
+        #TODO: test for accuracy!
         self.netD_A.zero_grad()
         self.netD_B.zero_grad()
 
@@ -264,19 +277,22 @@ class EvolutionaryCycleGANModel(BaseModel):
         loss_D_B.backward()
 
         # get gradient values
-        grad_val = 0
-        for param in self.netD_A.parameters():
-            grad_val += torch.sum(param.grad**2)
-        for param in self.netD_B.parameters():
-            grad_val += torch.sum(param.grad**2)
-        fd = - math.log(grad_val) # diversity fitness
-        return fq  + self.gamma * fd
+        if self.gamma > 0:
+            grad_val = 0
+            for param in self.netD_A.parameters():
+                grad_val += torch.sum(param.grad**2)
+            for param in self.netD_B.parameters():
+                grad_val += torch.sum(param.grad**2)
+            fd = - math.log(grad_val) # diversity fitness
+        else:
+            fd = 0
+        return fq + self.gamma * fd
 
     def get_copy_optimizer(self, child_generator):
         optimizer = torch.optim.Adam(child_generator.parameters(), lr=self.opt.lr)
         new_state = self.optimizer_G.state_dict()
         new_state['param_groups'] = optimizer.state_dict()['param_groups']
-        optimizer.load_state_dict(new_state)
+        # optimizer.load_state_dict(new_state) # TODO: figure out how to properly copy optimizer state
         return optimizer
 
     def optimize_parameters(self):
