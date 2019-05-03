@@ -10,7 +10,6 @@ import numpy as np
 import copy
 import math
 import torch.nn as nn
-import ipdb
 
 
 class EvolutionaryCycleGANModel(BaseModel):
@@ -76,6 +75,10 @@ class EvolutionaryCycleGANModel(BaseModel):
         self.model_names = ['D_A', 'D_B']
         self.disc_optimizer = [self.optimizer_D]
         self.set_optimizers()
+
+        # metrics of which mutation cost used and fitness score
+        self.mutation_chosen_metric = []
+        self.fitness_score_metric = []
 
     def set_optimizers(self):
         self.optimizers = self.disc_optimizer + [self.optimizer_G]
@@ -229,12 +232,9 @@ class EvolutionaryCycleGANModel(BaseModel):
                 # })
                 mut_cost.backward(retain_graph=True)
                 #TODO: check generator steps
-                try:
-                    optimizer = self.get_copy_optimizer(child_generator)
-                    optimizer.step()
-                except RuntimeError as e:
-                    ipdb.set_trace()
-                    print(e)
+                optimizer = self.get_copy_optimizer(child_generator)
+                optimizer.step()
+
                 optimizer_list.append(optimizer)
                 fitness = self.fitness_score(child_generator)
                 fitness_scores.append(fitness)
@@ -245,6 +245,9 @@ class EvolutionaryCycleGANModel(BaseModel):
         self.generators = [generator_list[i] for i in order[:self.num_parents]]
         self.optimizer_G = optimizer_list[order[0]]
         self.set_optimizers()
+
+        self.mutation_chosen_metric.append(order[0])
+        self.fitness_score_metric.append(fitness_scores[order[0]])
 
 
     def fitness_score(self, generator):
@@ -302,6 +305,9 @@ class EvolutionaryCycleGANModel(BaseModel):
     def save_networks(self, epoch):
         super(EvolutionaryCycleGANModel, self).save_networks(epoch)
         self.generators[0].save_to_disk(self.save_dir, epoch)
+        np.save(os.path.join(self.save_dir, 'mutations_chosen.npy'), np.asarray(self.mutation_chosen_metric))
+        np.save(os.path.join(self.save_dir, 'fitness_scores.npy'), np.asarray(self.fitness_score_metric))
+
 
 # Assuming p_z is uniform distribution
 def minimax_mutation_cost(fake_disc_pred, epsilon = 1e-8):
@@ -319,7 +325,7 @@ def minimax_mutation_cost(fake_disc_pred, epsilon = 1e-8):
 
 def heuristic_mutation_cost(fake_disc_pred, epsilon = 1e-8):
     """
-    Assuming p_z is uniform distribution
+    Assuming p_z- is uniform distribution
     :param fake_disc_pred: tensor of shape (N). Results of D(G(x))
     :param epsilon: for numerical stability. (we don't input log(0)
     :return: -1/2 * E[log(fake_disc_pred)]
