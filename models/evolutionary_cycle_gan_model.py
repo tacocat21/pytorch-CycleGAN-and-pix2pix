@@ -349,9 +349,11 @@ class GeneratorPair:
         self.netG_B = networks.define_G(opt.output_nc, opt.input_nc, opt.ngf, opt.netG, opt.norm,
                           not opt.no_dropout, opt.init_type, opt.init_gain, opt.gpu_ids)
         if 'genA_load_path' in opt:
-            self.netG_A.load_state_dict(opt.genA_load_path)
+            state_dict = torch.load(opt.genA_load_path)
+            self.netG_A.load_state_dict(state_dict)
         if 'genB_load_path' in opt:
-            self.netG_B.load_state_dict(opt.genB_load_path)
+            state_dict = torch.load(opt.genB_load_path)
+            self.netG_B.load_state_dict(state_dict)
 
     def parameters(self):
         return itertools.chain(self.netG_A.parameters(), self.netG_B.parameters())
@@ -361,14 +363,14 @@ class GeneratorPair:
         self.netG_B.zero_grad()
 
     def save_to_disk(self, save_dir, epoch):
-        netG_A_path = os.path.join(save_dir, '{}_netG_A.pth'.format(epoch))
-        netG_B_path = os.path.join(save_dir, '{}_netG_B.pth'.format(epoch))
+        netG_A_path = os.path.join(save_dir, '{}_net_G_A.pth'.format(epoch))
+        netG_B_path = os.path.join(save_dir, '{}_net_G_B.pth'.format(epoch))
 
         if torch.cuda.is_available():
             torch.save(self.netG_A.module.cpu().state_dict(), netG_A_path)
-            self.netG_A.cuda()
+            self.netG_A = self.netG_A.cuda()
             torch.save(self.netG_B.module.cpu().state_dict(), netG_B_path)
-            self.netG_B.cuda()
+            self.netG_B = self.netG_B.cuda()
 
         else:
             torch.save(self.netG_A.cpu().state_dict(), netG_A_path)
