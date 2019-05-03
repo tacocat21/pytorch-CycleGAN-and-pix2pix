@@ -348,6 +348,10 @@ class GeneratorPair:
                   not opt.no_dropout, opt.init_type, opt.init_gain, opt.gpu_ids)
         self.netG_B = networks.define_G(opt.output_nc, opt.input_nc, opt.ngf, opt.netG, opt.norm,
                           not opt.no_dropout, opt.init_type, opt.init_gain, opt.gpu_ids)
+        if 'genA_load_path' in opt:
+            self.netG_A.load_state_dict(opt.genA_load_path)
+        if 'genB_load_path' in opt:
+            self.netG_B.load_state_dict(opt.genB_load_path)
 
     def parameters(self):
         return itertools.chain(self.netG_A.parameters(), self.netG_B.parameters())

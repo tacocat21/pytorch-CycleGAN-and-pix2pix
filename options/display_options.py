@@ -10,7 +10,7 @@ class DisplayOptions(BaseOptions):
     def initialize(self, parser):
         parser = BaseOptions.initialize(self, parser)
 
-        parser.add_argument('--genA_path', type=str, help='path to generator A')
-        parser.add_argument('--genB_path', type=str, help='path to generator A')
+        parser.add_argument('--genA_load_path', type=str, help='path to generator A')
+        parser.add_argument('--genB_load_path', type=str, help='path to generator B')
         self.isTrain= False
         return parser
