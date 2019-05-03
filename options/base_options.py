@@ -102,10 +102,16 @@ class BaseOptions():
         message += '----------------- End -------------------'
         print(message)
 
+
+        if 'evaluation_model' in opt:
+            expr_dir = os.path.join(opt.checkpoints_dir, opt.name, opt.evaluation_checkpoint)
+            file_name = os.path.join(expr_dir, '{}_opt.txt'.format('evaluation'))
+        else:
+            expr_dir = os.path.join(opt.checkpoints_dir, opt.name)
+            file_name = os.path.join(expr_dir, '{}_opt.txt'.format(opt.phase))
+
         # save to the disk
-        expr_dir = os.path.join(opt.checkpoints_dir, opt.name)
         util.mkdirs(expr_dir)
-        file_name = os.path.join(expr_dir, '{}_opt.txt'.format(opt.phase))
         with open(file_name, 'wt') as opt_file:
             opt_file.write(message)
             opt_file.write('\n')
