@@ -20,8 +20,8 @@ if __name__ == '__main__':
     model.setup(opt)               # regular setup: load and print networks; create schedulers
     model.eval()
 
-    if torch.cuda.is_available():
-        model = model.cuda()
+    #if torch.cuda.is_available():
+    #    model = model.cuda()
 
     for i, data in enumerate(dataset):
         ipdb.set_trace()
