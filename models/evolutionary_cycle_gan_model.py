@@ -350,10 +350,10 @@ class GeneratorPair:
                           not opt.no_dropout, opt.init_type, opt.init_gain, opt.gpu_ids)
         if 'genA_load_path' in opt:
             state_dict = torch.load(opt.genA_load_path)
-            self.netG_A.load_state_dict(state_dict)
+            self.netG_A.module.load_state_dict(state_dict)
         if 'genB_load_path' in opt:
             state_dict = torch.load(opt.genB_load_path)
-            self.netG_B.load_state_dict(state_dict)
+            self.netG_B.module.load_state_dict(state_dict)
 
     def parameters(self):
         return itertools.chain(self.netG_A.parameters(), self.netG_B.parameters())
