@@ -12,6 +12,7 @@ if __name__ == '__main__':
     opt.gamma = 0.01
     opt.pool_size = 32
     opt.load_size = 64
+    opt.crop_size = 64
     opt.phase = 'test'
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
     dataset_size = len(dataset)    # get the number of images in the dataset.
