@@ -250,7 +250,7 @@ class EvolutionaryCycleGANModel(BaseModel):
         self.set_optimizers()
 
         self.mutation_chosen_metric.append(order[0])
-        self.fitness_score_metric.append(fitness_scores[order[0]])
+        self.fitness_score_metric.append(fitness_scores[order[0]].item())
 
 
     def fitness_score(self, generator):
