@@ -313,8 +313,8 @@ class EvolutionaryCycleGANModel(BaseModel):
 
     def compute_visuals(self, epoch=None):
         self.latest_netG_A = self.generators[0].netG_A
-        self.latest_netG_B = self.generators[0].netG_B
         fake_B_display = self.latest_netG_A(self.real_A)
+        self.latest_netG_B = self.generators[0].netG_B
         fake_A_display = self.latest_netG_B(self.real_B)
         #print(fake_A_display.shape)
         if epoch is None:
@@ -325,11 +325,11 @@ class EvolutionaryCycleGANModel(BaseModel):
             vutils.save_image(self.real_B, self.opt.realB_image_path, normalize=True, nrow=self.opt.grid_size)
         else:
 
-            vutils.save_image(fake_A_display, os.path.join(self.save_dir, self.train_outputs_dir, '{}_fake_A.png'.format(epoch)), normalize=True, nrow=self.opt.grid_size)
-            vutils.save_image(fake_B_display, os.path.join(self.save_dir, self.train_outputs_dir, '{}_fake_B.png'.format(epoch)), normalize=True, nrow=self.opt.grid_size)
+            vutils.save_image(fake_A_display, os.path.join(self.save_dir, self.train_outputs_dir, '{}_fake_A.png'.format(epoch)), normalize=True, nrow=8)
+            vutils.save_image(fake_B_display, os.path.join(self.save_dir, self.train_outputs_dir, '{}_fake_B.png'.format(epoch)), normalize=True, nrow=8)
 
-            vutils.save_image(self.real_A, os.path.join(self.save_dir, self.train_outputs_dir, '{}_real_A.png'.format(epoch)), normalize=True, nrow=self.opt.grid_size)
-            vutils.save_image(self.real_B, os.path.join(self.save_dir, self.train_outputs_dir, '{}_real_B.png'.format(epoch)), normalize=True, nrow=self.opt.grid_size)
+            vutils.save_image(self.real_A, os.path.join(self.save_dir, self.train_outputs_dir, '{}_real_A.png'.format(epoch)), normalize=True, nrow=8)
+            vutils.save_image(self.real_B, os.path.join(self.save_dir, self.train_outputs_dir, '{}_real_B.png'.format(epoch)), normalize=True, nrow=8)
 
 
 # Assuming p_z is uniform distribution
