@@ -71,7 +71,7 @@ if __name__ == '__main__':
 
             if total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
                 save_result = total_iters % opt.update_html_freq == 0
-                model.compute_visuals()
+                # model.compute_visuals(epoch)
                 try:
                     #TODO: fix this visualizer bug
                     visualizer.display_current_results(model.get_current_visuals(), epoch, save_result)
@@ -100,6 +100,6 @@ if __name__ == '__main__':
             print('saving the model at the end of epoch %d, iters %d' % (epoch, total_iters))
             model.save_networks('latest')
             model.save_networks(epoch)
-
+            model.compute_visuals(epoch)
         print('End of epoch %d / %d \t Time Taken: %d sec' % (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
         model.update_learning_rate()                     # update learning rates at the end of every epoch.
