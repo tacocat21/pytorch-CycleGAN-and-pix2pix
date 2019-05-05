@@ -324,7 +324,8 @@ class EvolutionaryCycleGANModel(BaseModel):
             vutils.save_image(self.real_A, self.opt.realA_image_path, normalize=True, nrow=self.opt.grid_size)
             vutils.save_image(self.real_B, self.opt.realB_image_path, normalize=True, nrow=self.opt.grid_size)
         else:
-
+            if not os.path.exists(os.path.join(self.save_dir, self.train_outputs_dir)):
+                os.makedirs(os.path.join(self.save_dir, self.train_outputs_dir))
             vutils.save_image(fake_A_display, os.path.join(self.save_dir, self.train_outputs_dir, '{}_fake_A.png'.format(epoch)), normalize=True, nrow=8)
             vutils.save_image(fake_B_display, os.path.join(self.save_dir, self.train_outputs_dir, '{}_fake_B.png'.format(epoch)), normalize=True, nrow=8)
 
