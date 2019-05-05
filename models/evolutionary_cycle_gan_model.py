@@ -392,7 +392,7 @@ class GeneratorPair:
 
         else:
             torch.save(self.netG_A.cpu().state_dict(), netG_A_path)
-            torch.save(self.netG_A.cpu().state_dict(), netG_B_path)
+            torch.save(self.netG_B.cpu().state_dict(), netG_B_path)
 
         # torch.save(self.netG_A, os.path.join(save_dir, '{}_netG_A.pth'.format(epoch)))
         # torch.save(self.netG_B, os.path.join(save_dir, '{}_netG_B.pth'.format(epoch)))
