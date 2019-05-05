@@ -10,6 +10,7 @@ import numpy as np
 import copy
 import math
 import torch.nn as nn
+import torchvision.utils as vutils
 
 
 class EvolutionaryCycleGANModel(BaseModel):
@@ -308,6 +309,17 @@ class EvolutionaryCycleGANModel(BaseModel):
         np.save(os.path.join(self.save_dir, 'mutations_chosen.npy'), np.asarray(self.mutation_chosen_metric))
         np.save(os.path.join(self.save_dir, 'fitness_scores.npy'), np.asarray(self.fitness_score_metric))
 
+    def compute_visuals(self):
+        self.latest_netG_A = self.generators[0].netG_A
+        self.latest_netG_B = self.generators[0].netG_B
+        fake_B_display = self.latest_netG_A(self.real_A)
+        fake_A_display = self.latest_netG_B(self.real_B)
+        #print(fake_A_display.shape)
+        vutils.save_image(fake_A_display, self.opt.fakeA_image_path, normalize=True, nrow=self.opt.grid_size)
+        vutils.save_image(fake_B_display, self.opt.fakeB_image_path, normalize=True, nrow=self.opt.grid_size)
+
+        vutils.save_image(self.real_A, self.opt.realA_image_path, normalize=True, nrow=self.opt.grid_size)
+        vutils.save_image(self.real_B, self.opt.realB_image_path, normalize=True, nrow=self.opt.grid_size)
 
 # Assuming p_z is uniform distribution
 def minimax_mutation_cost(fake_disc_pred, epsilon = 1e-8):
@@ -356,10 +368,10 @@ class GeneratorPair:
                           not opt.no_dropout, opt.init_type, opt.init_gain, opt.gpu_ids)
         if 'genA_load_path' in opt:
             state_dict = torch.load(opt.genA_load_path)
-            self.netG_A.module.load_state_dict(state_dict)
+            self.netG_A.load_state_dict(state_dict)
         if 'genB_load_path' in opt:
             state_dict = torch.load(opt.genB_load_path)
-            self.netG_B.module.load_state_dict(state_dict)
+            self.netG_B.load_state_dict(state_dict)
 
     def parameters(self):
         return itertools.chain(self.netG_A.parameters(), self.netG_B.parameters())
