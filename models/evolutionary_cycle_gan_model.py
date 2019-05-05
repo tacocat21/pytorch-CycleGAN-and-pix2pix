@@ -80,6 +80,9 @@ class EvolutionaryCycleGANModel(BaseModel):
         # metrics of which mutation cost used and fitness score
         self.mutation_chosen_metric = []
         self.fitness_score_metric = []
+        self.loss_D_A_metric = []
+        self.loss_D_B_metric = []
+        self.loss_G_metric = []
         self.train_outputs_dir = 'train_outputs'
 
 
@@ -157,11 +160,13 @@ class EvolutionaryCycleGANModel(BaseModel):
         """Calculate GAN loss for discriminator D_A"""
         fake_B_queries = [self.fake_B_pool.query(fb) for fb in self.fake_B_list]
         self.loss_D_A = self.backward_D_basic(self.netD_A, self.real_B, fake_B_queries)
+        self.loss_D_A_metric.append(self.loss_D_A)
 
     def backward_D_B(self):
         """Calculate GAN loss for discriminator D_B"""
         fake_A_queries = [self.fake_A_pool.query(fa) for fa in self.fake_A_list]
         self.loss_D_B = self.backward_D_basic(self.netD_B, self.real_A, fake_A_queries)
+        self.loss_D_B_metric.append(self.loss_D_A)
 
     def optimize_D(self):
         """Forward and backward pass for both discriminators"""
@@ -194,7 +199,7 @@ class EvolutionaryCycleGANModel(BaseModel):
         generator_list = []
         fitness_scores = []
         optimizer_list = [] # keep optimizer of best child
-
+        losses = []
         #loop over parent generators
         for i in range(len(self.generators)):
             gen_pair = self.generators[i] # parent
@@ -228,8 +233,8 @@ class EvolutionaryCycleGANModel(BaseModel):
 
                 # combined loss and calculate gradients
                 loss_G = loss_G_A + loss_G_B + loss_cycle_A + loss_cycle_B + loss_idt_A + loss_idt_B
-
                 mut_cost = loss_G + mut_func(self.netD_A(self.fake_B_list[i])) + mut_func(self.netD_B(self.fake_A_list[i]))
+                losses.append(mut_cost)
                 # self.optimizer_G.__setstate__({
                 #     'param_groups': child_generator.get_parameters()
                 # })
@@ -241,6 +246,8 @@ class EvolutionaryCycleGANModel(BaseModel):
                 optimizer_list.append(optimizer)
                 fitness = self.fitness_score(child_generator)
                 fitness_scores.append(fitness)
+        self.netD_A.zero_grad()
+        self.netD_B.zero_grad()
 
         # order of the fitness score
         order = sorted(range(len(fitness_scores)), key=lambda k: fitness_scores[k], reverse=True)
@@ -252,6 +259,7 @@ class EvolutionaryCycleGANModel(BaseModel):
         self.mutation_chosen_metric.append(order[0])
         self.fitness_score_metric.append(fitness_scores[order[0]].item())
 
+        self.loss_G_metric.append(losses[order[0]].item())
 
     def fitness_score(self, generator):
         """
@@ -310,6 +318,9 @@ class EvolutionaryCycleGANModel(BaseModel):
         self.generators[0].save_to_disk(self.save_dir, epoch)
         np.save(os.path.join(self.save_dir, 'mutations_chosen.npy'), np.asarray(self.mutation_chosen_metric))
         np.save(os.path.join(self.save_dir, 'fitness_scores.npy'), np.asarray(self.fitness_score_metric))
+        np.save(os.path.join(self.save_dir, 'loss_D_A.npy'), np.asarray(self.loss_D_A_metric))
+        np.save(os.path.join(self.save_dir, 'loss_D_B.npy'), np.asarray(self.loss_D_B_metric))
+        np.save(os.path.join(self.save_dir, 'loss_G.npy'), np.asarray(self.loss_G_metric))
 
     def compute_visuals(self, epoch=None):
         self.latest_netG_A = self.generators[0].netG_A
