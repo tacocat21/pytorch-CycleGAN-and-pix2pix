@@ -59,6 +59,10 @@ if __name__ == '__main__':
         real_A = data['A']
         real_B = data['B']
 
+        if torch.cuda.is_available():
+            real_A = real_A.cuda()
+            real_B = real_B.cuda()
+
         y = evaluation_model(real_A)
         evaluator_accurate += torch.sum(y == 0).item()
         y = evaluation_model(real_B)
