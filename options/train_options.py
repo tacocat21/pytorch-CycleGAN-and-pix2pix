@@ -41,5 +41,6 @@ class TrainOptions(BaseOptions):
         parser.add_argument('--num_discriminator_loop', type=int, default=2,
                             help='Number of time to loop the discriminator before looping the generator')
         parser.add_argument('--gamma', type=float, default=0.002, help='Hyperparameter for fitness function')
+        parser.add_argument('--only_single_mutation', type=int, help='Use only a single mutation function')
         self.isTrain = True
         return parser

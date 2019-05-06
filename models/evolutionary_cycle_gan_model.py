@@ -58,7 +58,8 @@ class EvolutionaryCycleGANModel(BaseModel):
                                         opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
         
         self.mutations = [minimax_mutation_cost, heuristic_mutation_cost, least_square_mutation_cost]
-
+        if 'only_single_mutation' in opt:
+            self.mutations = [self.mutations[opt.only_single_mutation]]
         # parent optimizer for generator
         self.optimizer_G = torch.optim.Adam(itertools.chain.from_iterable([g.parameters() for g in self.generators]),
                                             lr=opt.lr, betas=(opt.beta1, 0.999))
