@@ -31,7 +31,9 @@ if __name__ == '__main__':
     opt.beta1 = 0.9
     opt.gan_mode = 'wgangp'
     opt.gamma = 0.01
-
+    opt.pool_size = 32
+    opt.load_size = 64
+    opt.crop_size = 64
     save_dir = os.path.join(opt.checkpoints_dir, opt.name, opt.evaluation_checkpoint)
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
     evaluation_model = torch.load(opt.evaluation_model_filename)
