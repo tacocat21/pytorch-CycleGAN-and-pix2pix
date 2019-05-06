@@ -26,8 +26,8 @@ def get_model(model_name):
 if __name__ == '__main__':
 
     opt = EvaluationGANOptions().parse()
-    save_dir = os.path.join(opt.checkpoints_dir, opt.name, opt.evaluation_checkpoint)
     opt.phase = 'test'
+    save_dir = os.path.join(opt.checkpoints_dir, opt.name, opt.evaluation_checkpoint)
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
     evaluation_model = torch.load(opt.evaluation_model_filename)
     evaluation_model.eval()

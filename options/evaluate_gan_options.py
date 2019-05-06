@@ -14,5 +14,7 @@ class EvaluationGANOptions(BaseOptions):
         parser.add_argument('--evolutionary', action='store_true', help='Train the model using evolutionary algorithm')
         parser.add_argument('--genA_load_path', type=str, help='path to generator A')
         parser.add_argument('--genB_load_path', type=str, help='path to generator B')
+        parser.add_argument('--phase', type=str, default='test', help='train, val, test, etc')
+
         self.isTrain= False
         return parser
