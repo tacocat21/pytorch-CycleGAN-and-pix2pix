@@ -27,6 +27,9 @@ def get_model(model_name):
 if __name__ == '__main__':
 
     opt = EvaluationOptions().parse()
+    opt.crop_size = 64
+    opt.load_size = 75
+    opt.name = 'evaluators'
     save_dir = os.path.join(opt.checkpoints_dir, opt.name, opt.evaluation_checkpoint)
     train_dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
     opt.phase = 'val'
@@ -38,8 +41,8 @@ if __name__ == '__main__':
     model = get_model(opt.evaluation_model)
     if torch.cuda.is_available():
         model.cuda()
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr)
+    optimizer = torch.optim.SGD(model.parameters(), lr=opt.lr, momentum=0.9)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr)
     criterion = nn.CrossEntropyLoss()
 
     label_A = torch.zeros((opt.batch_size,)).type(torch.LongTensor)

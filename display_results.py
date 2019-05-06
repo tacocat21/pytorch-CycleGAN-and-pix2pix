@@ -1,4 +1,3 @@
-import torch
 from options.display_options import DisplayOptions
 from data import create_dataset
 from models import create_model
