@@ -34,6 +34,7 @@ if __name__ == '__main__':
     opt.pool_size = 32
     opt.load_size = 64
     opt.crop_size = 64
+    opt.batch_size = 64
     save_dir = os.path.join(opt.checkpoints_dir, opt.name, opt.evaluation_checkpoint)
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
     evaluation_model = torch.load(opt.evaluation_model_filename)
@@ -49,11 +50,20 @@ if __name__ == '__main__':
         label_A = label_A.cuda()
         label_B = label_B.cuda()
 
+    evaluator_accurate = 0
     num_accurate = 0
     num_images = 0
     for i, data in enumerate(dataset):
        # ipdb.set_trace()
         #print(data)
+        real_A = data['A']
+        real_B = data['B']
+
+        y = evaluation_model(real_A)
+        evaluator_accurate += torch.sum(y == 0).item()
+        y = evaluation_model(real_B)
+        evaluator_accurate += torch.sum(y == 1).item()
+
         gan_model.set_input(data)  # unpack data from data loader
         with torch.no_grad():
             gan_model.forward()           # run inference
@@ -77,4 +87,5 @@ if __name__ == '__main__':
         num_images += len(data_B)
 
     accuracy = num_accurate / num_images
+    print("Accuracy of evaluator = {}".format(evaluator_accurate/ num_images))
     print("Accuracy of GAN model = {}".format(accuracy))
