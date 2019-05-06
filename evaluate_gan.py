@@ -43,9 +43,6 @@ if __name__ == '__main__':
         gan_model.generators[0].netG_A.eval()
         gan_model.generators[0].netG_B.eval()
 
-    if torch.cuda.is_available():
-        gan_model.cuda()
-
     label_A = torch.zeros((opt.batch_size,)).type(torch.LongTensor)
     label_B = torch.ones((opt.batch_size,)).type(torch.LongTensor)
     if torch.cuda.is_available():
