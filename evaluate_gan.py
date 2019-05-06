@@ -27,6 +27,11 @@ if __name__ == '__main__':
 
     opt = EvaluationGANOptions().parse()
     opt.phase = 'test'
+    opt.lr = 0.001
+    opt.beta1 = 0.9
+    opt.gan_mode = 'wgangp'
+    opt.gamma = 0.01
+
     save_dir = os.path.join(opt.checkpoints_dir, opt.name, opt.evaluation_checkpoint)
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
     evaluation_model = torch.load(opt.evaluation_model_filename)
