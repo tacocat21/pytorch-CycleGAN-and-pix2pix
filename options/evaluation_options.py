@@ -17,8 +17,5 @@ class EvaluationOptions(BaseOptions):
         parser.add_argument('--num-epochs', type=int, default=100, help='number of epochs to train model')
         parser.add_argument('--phase', type=str, default='train')
 
-        parser.add_argument('--genA_load_path', type=str, help='path to generator A')
-        parser.add_argument('--genB_load_path', type=str, help='path to generator B')
-
         self.isTrain= False
         return parser
